@@ -86,7 +86,8 @@ function getLocation() {
       };
 
       const offset = gpsToOffset(userLatLon, { lat: targetLat, lon: targetLon });
-      solarSystem.translation = [offset.x, 2, offset.z];
+      // Wait for user orientation from onXRFrame
+window.solarOffset = offset;
 
       if (renderer) {
         scene.addNode(solarSystem);
@@ -196,6 +197,23 @@ function initXR() {
         let session = frame.session;
         let refSpace = session.isImmersive ? xrImmersiveRefSpace : inlineViewerHelper.referenceSpace;
         let pose = frame.getViewerPose(refSpace);
+
+        // Align model to GPS using user's facing direction
+        if (window.solarOffset && pose) {
+          const orientation = pose.views[0].transform.orientation;
+          const q = orientation;
+          const heading = Math.atan2(2.0 * (q.x * q.z + q.w * q.y), q.w * q.w + q.x * q.x - q.y * q.y - q.z * q.z);
+          const rotatedX = window.solarOffset.x * Math.cos(heading) - window.solarOffset.z * Math.sin(heading);
+          const rotatedZ = window.solarOffset.x * Math.sin(heading) + window.solarOffset.z * Math.cos(heading);
+          solarSystem.translation = [rotatedX, 2, rotatedZ];
+
+          delete window.solarOffset; // only place once
+          console.log(`📍 Aligned to heading. Final position: X=${rotatedX.toFixed(2)} Z=${rotatedZ.toFixed(2)}`);
+
+          if (!scene.nodes.includes(solarSystem)) {
+            scene.addNode(solarSystem);
+          }
+        }
 
         scene.startFrame();
         session.requestAnimationFrame(onXRFrame);
