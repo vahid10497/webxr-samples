@@ -194,25 +194,32 @@ function initXR() {
       }
 
       function onXRFrame(t, frame) {
+        if (!window.gpsPlaced) window.gpsPlaced = false;
+        if (!window.headingCaptured) window.headingCaptured = false;
         let session = frame.session;
         let refSpace = session.isImmersive ? xrImmersiveRefSpace : inlineViewerHelper.referenceSpace;
         let pose = frame.getViewerPose(refSpace);
 
         // Align model to GPS using user's facing direction
-        if (window.solarOffset && pose) {
+        if (!window.gpsPlaced && window.solarOffset && pose) {
           const orientation = pose.views[0].transform.orientation;
           const q = orientation;
           const heading = Math.atan2(2.0 * (q.x * q.z + q.w * q.y), q.w * q.w + q.x * q.x - q.y * q.y - q.z * q.z);
+          window.headingCaptured = true;
+
           const rotatedX = window.solarOffset.x * Math.cos(heading) - window.solarOffset.z * Math.sin(heading);
           const rotatedZ = window.solarOffset.x * Math.sin(heading) + window.solarOffset.z * Math.cos(heading);
           solarSystem.translation = [rotatedX, 2, rotatedZ];
 
-          delete window.solarOffset; // only place once
-          console.log(`📍 Aligned to heading. Final position: X=${rotatedX.toFixed(2)} Z=${rotatedZ.toFixed(2)}`);
-
           if (!scene.nodes.includes(solarSystem)) {
             scene.addNode(solarSystem);
           }
+
+          console.log(`📍 Final model position: X=${rotatedX.toFixed(2)} Z=${rotatedZ.toFixed(2)}`);
+
+          window.gpsPlaced = true;
+          delete window.solarOffset;
+        }
         }
 
         scene.startFrame();
