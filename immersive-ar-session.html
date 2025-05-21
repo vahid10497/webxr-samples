@@ -67,11 +67,16 @@
         updateStatus('Getting GPS location...');
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(pos => {
-            userLatLon = {
-              lat: pos.coords.latitude,
-              lon: pos.coords.longitude
-            };
-            updateStatus(`✅ GPS working.\n📍 lat: ${userLatLon.lat.toFixed(6)}\n📍 lon: ${userLatLon.lon.toFixed(6)}\n✅ Object placed via GPS`);
+  userLatLon = {
+    lat: pos.coords.latitude,
+    lon: pos.coords.longitude
+  };
+
+  // Apply GPS-based world offset
+  const offset = gpsToOffset(userLatLon, { lat: targetLat, lon: targetLon });
+  solarSystem.translation = [offset.x, 3, offset.z]; // "2" for first floor height in meters
+
+  updateStatus(`✅ GPS working.\n📍 lat: ${userLatLon.lat.toFixed(6)}\n📍 lon: ${userLatLon.lon.toFixed(6)}\n✅ Object placed via GPS`);
           }, err => {
             updateStatus('❌ GPS error: ' + err.message);
           }, { enableHighAccuracy: true });
