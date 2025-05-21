@@ -1,4 +1,24 @@
 <!doctype html>
+<!--
+Copyright 2018 The Immersive Web Community Group
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+-->
 <html>
   <head>
     <meta charset='utf-8'>
@@ -25,7 +45,6 @@
         </p>
       </details>
     </header>
-    <div id="status" style="position:absolute;top:10px;left:10px;background:white;padding:8px;font-family:sans-serif;z-index:1000">Initializing...</div>
     <script type="module">
       import {WebXRButton} from './js/util/webxr-button.js';
       import {Scene} from './js/render/scenes/scene.js';
@@ -35,57 +54,32 @@
       import {Gltf2Node} from './js/render/nodes/gltf2.js';
       import {QueryArgs} from './js/util/query-args.js';
 
+      // If requested, use the polyfill to provide support for mobile devices
+      // and devices which only support WebVR.
       import WebXRPolyfill from './js/third-party/webxr-polyfill/build/webxr-polyfill.module.js';
       if (QueryArgs.getBool('usePolyfill', true)) {
         let polyfill = new WebXRPolyfill();
       }
 
+      // XR globals.
       let xrButton = null;
       let xrImmersiveRefSpace = null;
       let inlineViewerHelper = null;
 
+      // WebGL scene globals.
       let gl = null;
       let renderer = null;
       let scene = new Scene();
       let solarSystem = new Gltf2Node({url: 'media/gltf/space/space.gltf'});
-solarSystem.scale = [0.1, 0.1, 0.1];
+      // The solar system is big (citation needed). Scale it down so that users
+      // can move around the planets more easily.
+      solarSystem.scale = [0.1, 0.1, 0.1];
+      scene.addNode(solarSystem);
+      // Still adding a skybox, but only for the benefit of the inline view.
       let skybox = new SkyboxNode({url: 'media/textures/milky-way-4k.png'});
       scene.addNode(skybox);
 
-      // --- Geolocation target offset ---
-      const targetLat = 48.28995554409128;
-      const targetLon = 14.282849641415106;
-      let userLatLon = null;
-
-      function updateStatus(msg) {
-        const el = document.getElementById('status');
-        if (el) el.innerText = msg;
-      }
-
-      function getLocation() {
-        updateStatus('Getting GPS location...');
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(pos => {
-  userLatLon = {
-    lat: pos.coords.latitude,
-    lon: pos.coords.longitude
-  };
-
-  const offset = gpsToOffset(userLatLon, { lat: targetLat, lon: targetLon });
-  solarSystem.translation = [offset.x, 2, offset.z];
-  scene.addNode(solarSystem);
-
-  updateStatus(`✅ GPS working.\n📍 lat: ${userLatLon.lat.toFixed(6)}\n📍 lon: ${userLatLon.lon.toFixed(6)}\n✅ Object placed via GPS`);
-          }, err => {
-            updateStatus('❌ GPS error: ' + err.message);
-          }, { enableHighAccuracy: true });
-        } else {
-          updateStatus('❌ Geolocation not supported');
-        }
-      }
-
       function initXR() {
-        getLocation();
         xrButton = new WebXRButton({
           onRequestSession: onRequestSession,
           onEndSession: onEndSession,
@@ -96,6 +90,8 @@ solarSystem.scale = [0.1, 0.1, 0.1];
         document.querySelector('header').appendChild(xrButton.domElement);
 
         if (navigator.xr) {
+          // Checks to ensure that 'immersive-ar' mode is available, and only
+          // enables the button if so.
           navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
             xrButton.enabled = supported;
           });
@@ -105,6 +101,10 @@ solarSystem.scale = [0.1, 0.1, 0.1];
       }
 
       function onRequestSession() {
+        // Requests an 'immersive-ar' session, which ensures that the users
+        // environment will be visible either via video passthrough or a
+        // transparent display. This may be presented either in a headset or
+        // fullscreen on a mobile device.
         return navigator.xr.requestSession('immersive-ar')
             .then((session) => {
               xrButton.setSession(session);
@@ -114,9 +114,12 @@ solarSystem.scale = [0.1, 0.1, 0.1];
       }
 
       function initGL() {
-        if (gl) return;
+        if (gl)
+          return;
 
-        gl = createWebGLContext({ xrCompatible: true });
+        gl = createWebGLContext({
+          xrCompatible: true
+        });
         document.body.appendChild(gl.canvas);
 
         function onResize() {
@@ -127,6 +130,7 @@ solarSystem.scale = [0.1, 0.1, 0.1];
         onResize();
 
         renderer = new Renderer(gl);
+
         scene.setRenderer(renderer);
       }
 
@@ -134,6 +138,8 @@ solarSystem.scale = [0.1, 0.1, 0.1];
         session.addEventListener('end', onSessionEnded);
 
         if (session.isImmersive) {
+          // When in 'immersive-ar' mode don't draw an opaque background because
+          // we want the real world to show through.
           skybox.visible = false;
         }
 
@@ -148,6 +154,8 @@ solarSystem.scale = [0.1, 0.1, 0.1];
 
             xrImmersiveRefSpace.addEventListener('reset', (evt) => {
               if (evt.transform) {
+                // AR experiences typically should stay grounded to the real world.
+                // If there's a known origin shift, compensate for it here.
                 xrImmersiveRefSpace = xrImmersiveRefSpace.getOffsetReferenceSpace(evt.transform);
               }
             });
@@ -165,48 +173,29 @@ solarSystem.scale = [0.1, 0.1, 0.1];
       function onSessionEnded(event) {
         if (event.session.isImmersive) {
           xrButton.setSession(null);
+          // Turn the background back on when we go back to the inlive view.
           skybox.visible = true;
         }
       }
 
+      // Called every time a XRSession requests that a new frame be drawn.
       function onXRFrame(t, frame) {
         let session = frame.session;
-        let refSpace = session.isImmersive ? xrImmersiveRefSpace : inlineViewerHelper.referenceSpace;
+        let refSpace = session.isImmersive ?
+                         xrImmersiveRefSpace :
+                         inlineViewerHelper.referenceSpace;
         let pose = frame.getViewerPose(refSpace);
 
         scene.startFrame();
+
         session.requestAnimationFrame(onXRFrame);
+
         scene.drawXRFrame(frame, pose);
-        if (solarSystem.translation) {
-  const status = document.getElementById('status');
-  const solarX = solarSystem.translation[0].toFixed(2);
-  const solarY = solarSystem.translation[1].toFixed(2);
-  const solarZ = solarSystem.translation[2].toFixed(2);
 
-  const widgetNode = scene.nodes.find(n => n !== solarSystem && n !== skybox);
-  let widgetText = 'Widget not found';
-  if (widgetNode && widgetNode.translation) {
-    const widgetX = widgetNode.translation[0].toFixed(2);
-    const widgetY = widgetNode.translation[1].toFixed(2);
-    const widgetZ = widgetNode.translation[2].toFixed(2);
-    widgetText = `Widget pos:
-X: ${widgetX} m
-Y: ${widgetY} m
-Z: ${widgetZ} m`;
-  }
-
-  status.innerText = `✅ GPS working.
-📍 SolarSystem pos:
-X: ${solarX} m
-Y: ${solarY} m
-Z: ${solarZ} m
-
-${widgetText}`;
-}
-}
-scene.endFrame();
+        scene.endFrame();
       }
 
+      // Start the XR application.
       initXR();
     </script>
   </body>
