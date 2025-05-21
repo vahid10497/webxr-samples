@@ -177,7 +177,34 @@ solarSystem.scale = [0.1, 0.1, 0.1];
         scene.startFrame();
         session.requestAnimationFrame(onXRFrame);
         scene.drawXRFrame(frame, pose);
-        scene.endFrame();
+        if (solarSystem.translation) {
+  const status = document.getElementById('status');
+  const solarX = solarSystem.translation[0].toFixed(2);
+  const solarY = solarSystem.translation[1].toFixed(2);
+  const solarZ = solarSystem.translation[2].toFixed(2);
+
+  const widgetNode = scene.nodes.find(n => n !== solarSystem && n !== skybox);
+  let widgetText = 'Widget not found';
+  if (widgetNode && widgetNode.translation) {
+    const widgetX = widgetNode.translation[0].toFixed(2);
+    const widgetY = widgetNode.translation[1].toFixed(2);
+    const widgetZ = widgetNode.translation[2].toFixed(2);
+    widgetText = `Widget pos:
+X: ${widgetX} m
+Y: ${widgetY} m
+Z: ${widgetZ} m`;
+  }
+
+  status.innerText = `✅ GPS working.
+📍 SolarSystem pos:
+X: ${solarX} m
+Y: ${solarY} m
+Z: ${solarZ} m
+
+${widgetText}`;
+}
+}
+scene.endFrame();
       }
 
       initXR();
