@@ -75,7 +75,10 @@ solarSystem.scale = [0.1, 0.1, 0.1];
   solarSystem.translation = [offset.x, 2, offset.z];
   scene.addNode(solarSystem);
 
-  updateStatus(`✅ GPS working.\n📍 lat: ${userLatLon.lat.toFixed(6)}\n📍 lon: ${userLatLon.lon.toFixed(6)}\n✅ Object placed via GPS`);
+  console.log(`✅ GPS working.
+📍 lat: ${userLatLon.lat.toFixed(6)}
+📍 lon: ${userLatLon.lon.toFixed(6)}
+✅ Object placed via GPS`);
           }, err => {
             updateStatus('❌ GPS error: ' + err.message);
           }, { enableHighAccuracy: true });
@@ -106,8 +109,7 @@ solarSystem.scale = [0.1, 0.1, 0.1];
 
       function onRequestSession() {
         return navigator.xr.requestSession('immersive-ar', {
-          requiredFeatures: ['dom-overlay'],
-          domOverlay: { root: document.body }
+          
         })
             .then((session) => {
               xrButton.setSession(session);
@@ -134,7 +136,7 @@ solarSystem.scale = [0.1, 0.1, 0.1];
       }
 
       function onSessionStarted(session) {
-  document.querySelector('header').style.display = 'none';
+  // Keeping header visible for testing
   
         session.addEventListener('end', onSessionEnded);
 
@@ -199,14 +201,8 @@ Y: ${widgetY} m
 Z: ${widgetZ} m`;
   }
 
-  const status = document.getElementById('status');
-  status.innerText = `✅ GPS working.
-📍 SolarSystem pos:
-X: ${solarX} m
-Y: ${solarY} m
-Z: ${solarZ} m
-
-${widgetText}`;
+  console.log(`✅ GPS working. SolarSystem pos: X: ${solarX} Y: ${solarY} Z: ${solarZ}`);
+console.log(widgetText);
 }
 scene.endFrame();
       }
