@@ -47,7 +47,7 @@
       let scene = new Scene();
       let solarSystem = new Gltf2Node({url: 'media/gltf/space/space.gltf'});
       solarSystem.scale = [0.1, 0.1, 0.1];
-      scene.addNode(solarSystem);
+      // Will add after GPS resolves
 
       let skybox = new SkyboxNode({url: 'media/textures/milky-way-4k.png'});
       scene.addNode(skybox);
@@ -133,6 +133,7 @@
 
             const offset = gpsToOffset(userLatLon, { lat: targetLat, lon: targetLon });
             solarSystem.translation = [offset.x, 2, offset.z];
+            scene.addNode(solarSystem);
 
             console.log(`✅ GPS working.
 📍 lat: ${userLatLon.lat.toFixed(6)}
