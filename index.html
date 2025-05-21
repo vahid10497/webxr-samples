@@ -8,7 +8,6 @@
     <link rel='icon' type='image/png' sizes='32x32' href='favicon-32x32.png'>
     <link rel='icon' type='image/png' sizes='96x96' href='favicon-96x96.png'>
     <link rel='stylesheet' href='css/common.css'>
-
     <title>Immersive AR Session</title>
   </head>
   <body>
@@ -25,7 +24,7 @@
         </p>
       </details>
     </header>
-    
+
     <script type="module">
       import {WebXRButton} from './js/util/webxr-button.js';
       import {Scene} from './js/render/scenes/scene.js';
@@ -48,66 +47,19 @@
       let renderer = null;
       let scene = new Scene();
       let solarSystem = new Gltf2Node({url: 'media/gltf/space/space.gltf'});
-solarSystem.scale = [0.1, 0.1, 0.1];
+      solarSystem.scale = [0.1, 0.1, 0.1];
+      scene.addNode(solarSystem);
+
       let skybox = new SkyboxNode({url: 'media/textures/milky-way-4k.png'});
       scene.addNode(skybox);
 
-      // --- Geolocation target offset ---
-      const targetLat = 48.28995554409128;
-      const targetLon = 14.282849641415106;
-      let userLatLon = null;
-
-function gpsToOffset(user, target) {
-  const R = 6371000;
-  const dLat = (target.lat - user.lat) * Math.PI / 180;
-  const dLon = (target.lon - user.lon) * Math.PI / 180;
-  const lat1 = user.lat * Math.PI / 180;
-  const lat2 = target.lat * Math.PI / 180;
-
-  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(lat1) * Math.cos(lat2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const distance = R * c;
-
-  const bearing = Math.atan2(
-    Math.sin(dLon) * Math.cos(lat2),
-    Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon)
-  );
-
-  return {
-    x: distance * Math.sin(bearing),
-    z: distance * Math.cos(bearing)
-  };
-}
-
-      function updateStatus(msg) {
-        const el = document.getElementById('status');
-        if (el) el.innerText = msg;
-      }
-
-      function getLocation() {
-        console.log(`✅ GPS working.
-📍 lat: ${userLatLon.lat.toFixed(6)}
-📍 lon: ${userLatLon.lon.toFixed(6)}
-✅ Object placed via GPS`);
-
-
-          }, err => {
-            updateStatus('❌ GPS error: ' + err.message);
-          }, { enableHighAccuracy: true });
-        } else {
-          updateStatus('❌ Geolocation not supported');
-        }
-      }
-
       function initXR() {
-        getLocation();
         xrButton = new WebXRButton({
           onRequestSession: onRequestSession,
           onEndSession: onEndSession,
           textEnterXRTitle: "START AR",
           textXRNotFoundTitle: "AR NOT FOUND",
-          textExitXRTitle: "EXIT  AR",
+          textExitXRTitle: "EXIT AR",
         });
         document.querySelector('header').appendChild(xrButton.domElement);
 
@@ -121,9 +73,7 @@ function gpsToOffset(user, target) {
       }
 
       function onRequestSession() {
-        return navigator.xr.requestSession('immersive-ar', {
-          
-        })
+        return navigator.xr.requestSession('immersive-ar')
             .then((session) => {
               xrButton.setSession(session);
               session.isImmersive = true;
@@ -146,16 +96,9 @@ function gpsToOffset(user, target) {
 
         renderer = new Renderer(gl);
         scene.setRenderer(renderer);
-
-        // Add solarSystem only after XR is ready
-        
       }
 
       function onSessionStarted(session) {
-  scene.addNode(solarSystem);
-  console.log("✅ SolarSystem added to scene in onSessionStarted");
-  // Keeping header visible for testing
-  
         session.addEventListener('end', onSessionEnded);
 
         if (session.isImmersive) {
@@ -179,6 +122,7 @@ function gpsToOffset(user, target) {
           } else {
             inlineViewerHelper = new InlineViewerHelper(gl.canvas, refSpace);
           }
+
           session.requestAnimationFrame(onXRFrame);
         });
       }
@@ -196,30 +140,18 @@ function gpsToOffset(user, target) {
 
       function onXRFrame(t, frame) {
         let session = frame.session;
-        let refSpace = session.isImmersive ? xrImmersiveRefSpace : inlineViewerHelper.referenceSpace;
+        let refSpace = session.isImmersive ?
+                       xrImmersiveRefSpace :
+                       inlineViewerHelper.referenceSpace;
         let pose = frame.getViewerPose(refSpace);
 
         scene.startFrame();
         session.requestAnimationFrame(onXRFrame);
         scene.drawXRFrame(frame, pose);
-if (scene && scene.nodes) {
-  if (solarSystem.translation) {
-    const solarX = solarSystem.translation[0].toFixed(2);
-    const solarY = solarSystem.translation[1].toFixed(2);
-    const solarZ = solarSystem.translation[2].toFixed(2);
-    console.log(`📦 SolarSystem position - X: ${solarX}, Y: ${solarY}, Z: ${solarZ}`);
-  } else {
-    console.log("⏳ SolarSystem translation not yet available");
-  }
-}
-scene.endFrame();
+        scene.endFrame();
       }
 
       initXR();
-
-// Show status box only after AR starts
-
     </script>
-    <div id="status" style="position: absolute; top: 10px; left: 10px; background: white; padding: 8px; font-family: sans-serif; font-size: 14px; z-index: 9999;">Initializing...</div>
-</body>
+  </body>
 </html>
