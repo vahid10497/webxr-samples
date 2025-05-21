@@ -96,7 +96,7 @@ function gpsToOffset(user, target) {
 
   const offset = gpsToOffset(userLatLon, { lat: targetLat, lon: targetLon });
   solarSystem.translation = [offset.x, 2, offset.z];
-  scene.addNode(solarSystem);
+  solarSystem._readyToAdd = true;
 
   console.log(`✅ GPS working.
 📍 lat: ${userLatLon.lat.toFixed(6)}
@@ -156,6 +156,11 @@ function gpsToOffset(user, target) {
 
         renderer = new Renderer(gl);
         scene.setRenderer(renderer);
+
+        // Add solarSystem only after XR is ready
+        if (solarSystem._readyToAdd) {
+          scene.addNode(solarSystem);
+        }
       }
 
       function onSessionStarted(session) {
