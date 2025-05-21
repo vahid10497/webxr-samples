@@ -147,10 +147,12 @@ function initXR() {
 
         renderer = new Renderer(gl);
         scene.setRenderer(renderer);
+
+        // GPS should be triggered only after renderer is ready
+        getLocation();
       }
 
       function onSessionStarted(session) {
-        getLocation();
         session.addEventListener('end', onSessionEnded);
 
         if (session.isImmersive) {
