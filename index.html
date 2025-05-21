@@ -85,17 +85,12 @@ function gpsToOffset(user, target) {
         if (el) el.innerText = msg;
       }
 
-      function getLocation() {$1console.log(`✅ GPS working.
+      function getLocation() {
+        console.log(`✅ GPS working.
 📍 lat: ${userLatLon.lat.toFixed(6)}
 📍 lon: ${userLatLon.lon.toFixed(6)}
 ✅ Object placed via GPS`);
-if (renderer && !scene.nodes.includes(solarSystem)) {
-  scene.addNode(solarSystem);
-  console.log("✅ SolarSystem added after GPS fix");
-} else if (!renderer) {
-  solarSystem._readyToAdd = true;
-  console.warn("⚠️ Renderer not ready — will try adding later in initGL()");
-}
+
 
           }, err => {
             updateStatus('❌ GPS error: ' + err.message);
@@ -153,15 +148,12 @@ if (renderer && !scene.nodes.includes(solarSystem)) {
         scene.setRenderer(renderer);
 
         // Add solarSystem only after XR is ready
-        if (solarSystem._readyToAdd && !scene.nodes.includes(solarSystem)) {
-  scene.addNode(solarSystem);
-  console.log("✅ SolarSystem added to scene in initGL");
-} else {
-  console.warn("⚠️ SolarSystem not ready when initGL ran");
-}
+        
       }
 
       function onSessionStarted(session) {
+  scene.addNode(solarSystem);
+  console.log("✅ SolarSystem added to scene in onSessionStarted");
   // Keeping header visible for testing
   
         session.addEventListener('end', onSessionEnded);
