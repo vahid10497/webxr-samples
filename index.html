@@ -85,23 +85,18 @@ function gpsToOffset(user, target) {
         if (el) el.innerText = msg;
       }
 
-      function getLocation() {
-        updateStatus('Getting GPS location...');
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(pos => {
-  userLatLon = {
-    lat: pos.coords.latitude,
-    lon: pos.coords.longitude
-  };
-
-  const offset = gpsToOffset(userLatLon, { lat: targetLat, lon: targetLon });
-  solarSystem.translation = [offset.x, 2, offset.z];
-  solarSystem._readyToAdd = true;
-
-  console.log(`✅ GPS working.
+      function getLocation() {$1console.log(`✅ GPS working.
 📍 lat: ${userLatLon.lat.toFixed(6)}
 📍 lon: ${userLatLon.lon.toFixed(6)}
 ✅ Object placed via GPS`);
+if (renderer && !scene.nodes.includes(solarSystem)) {
+  scene.addNode(solarSystem);
+  console.log("✅ SolarSystem added after GPS fix");
+} else if (!renderer) {
+  solarSystem._readyToAdd = true;
+  console.warn("⚠️ Renderer not ready — will try adding later in initGL()");
+}
+
           }, err => {
             updateStatus('❌ GPS error: ' + err.message);
           }, { enableHighAccuracy: true });
@@ -158,9 +153,12 @@ function gpsToOffset(user, target) {
         scene.setRenderer(renderer);
 
         // Add solarSystem only after XR is ready
-        if (solarSystem._readyToAdd) {
-          scene.addNode(solarSystem);
-        }
+        if (solarSystem._readyToAdd && !scene.nodes.includes(solarSystem)) {
+  scene.addNode(solarSystem);
+  console.log("✅ SolarSystem added to scene in initGL");
+} else {
+  console.warn("⚠️ SolarSystem not ready when initGL ran");
+}
       }
 
       function onSessionStarted(session) {
