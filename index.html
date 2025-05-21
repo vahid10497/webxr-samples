@@ -134,9 +134,10 @@
             };
 
             const offset = gpsToOffset(userLatLon, { lat: targetLat, lon: targetLon });
+            window.fixedOffset = offset;
             solarSystem = new Gltf2Node({url: 'media/gltf/space/space.gltf'});
             solarSystem.scale = [0.1, 0.1, 0.1];
-            solarSystem.translation = [offset.x, 2, offset.z];
+            solarSystem.translation = [window.fixedOffset.x, 2, window.fixedOffset.z];
             scene.addNode(solarSystem);
             window.gpsPlaced = true;
 
