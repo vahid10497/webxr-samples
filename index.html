@@ -57,6 +57,29 @@ solarSystem.scale = [0.1, 0.1, 0.1];
       const targetLon = 14.282849641415106;
       let userLatLon = null;
 
+function gpsToOffset(user, target) {
+  const R = 6371000;
+  const dLat = (target.lat - user.lat) * Math.PI / 180;
+  const dLon = (target.lon - user.lon) * Math.PI / 180;
+  const lat1 = user.lat * Math.PI / 180;
+  const lat2 = target.lat * Math.PI / 180;
+
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(lat1) * Math.cos(lat2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = R * c;
+
+  const bearing = Math.atan2(
+    Math.sin(dLon) * Math.cos(lat2),
+    Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon)
+  );
+
+  return {
+    x: distance * Math.sin(bearing),
+    z: distance * Math.cos(bearing)
+  };
+}
+
       function updateStatus(msg) {
         const el = document.getElementById('status');
         if (el) el.innerText = msg;
