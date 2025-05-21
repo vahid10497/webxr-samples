@@ -177,37 +177,31 @@ solarSystem.scale = [0.1, 0.1, 0.1];
         scene.startFrame();
         session.requestAnimationFrame(onXRFrame);
         scene.drawXRFrame(frame, pose);
-        if (solarSystem.translation) {
-  const status = document.getElementById('status');
+if (solarSystem.translation) {
   const solarX = solarSystem.translation[0].toFixed(2);
   const solarY = solarSystem.translation[1].toFixed(2);
   const solarZ = solarSystem.translation[2].toFixed(2);
 
-  let extraNode = scene.nodes[2]; // Assume this is the FPS widget
-if (extraNode && extraNode.translation) {
-  const widgetX = extraNode.translation[0].toFixed(2);
-  const widgetY = extraNode.translation[1].toFixed(2);
-  const widgetZ = extraNode.translation[2].toFixed(2);
-  status.innerText = `✅ GPS working.
-📍 SolarSystem pos:
-X: ${solarX} m
-Y: ${solarY} m
-Z: ${solarZ} m
-
-Widget pos:
+  const widgetNode = scene.nodes[2]; // assuming it's the third node (after skybox and solarSystem)
+  let widgetText = 'Widget pos: Not found';
+  if (widgetNode && widgetNode.translation) {
+    const widgetX = widgetNode.translation[0].toFixed(2);
+    const widgetY = widgetNode.translation[1].toFixed(2);
+    const widgetZ = widgetNode.translation[2].toFixed(2);
+    widgetText = `Widget pos:
 X: ${widgetX} m
 Y: ${widgetY} m
 Z: ${widgetZ} m`;
-} else {
+  }
+
+  const status = document.getElementById('status');
   status.innerText = `✅ GPS working.
 📍 SolarSystem pos:
 X: ${solarX} m
 Y: ${solarY} m
 Z: ${solarZ} m
 
-Widget pos: Not available`;
-}
-}
+${widgetText}`;
 }
 scene.endFrame();
       }
