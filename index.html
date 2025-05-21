@@ -24,7 +24,6 @@
         </p>
       </details>
     </header>
-
     <script type="module">
       import {WebXRButton} from './js/util/webxr-button.js';
       import {Scene} from './js/render/scenes/scene.js';
@@ -48,12 +47,64 @@
       let scene = new Scene();
       let solarSystem = new Gltf2Node({url: 'media/gltf/space/space.gltf'});
       solarSystem.scale = [0.1, 0.1, 0.1];
-      scene.addNode(solarSystem);
 
       let skybox = new SkyboxNode({url: 'media/textures/milky-way-4k.png'});
       scene.addNode(skybox);
 
-      function initXR() {
+      function gpsToOffset(user, target) {
+  const R = 6371000;
+  const dLat = (target.lat - user.lat) * Math.PI / 180;
+  const dLon = (target.lon - user.lon) * Math.PI / 180;
+  const lat1 = user.lat * Math.PI / 180;
+  const lat2 = target.lat * Math.PI / 180;
+
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(lat1) * Math.cos(lat2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = R * c;
+
+  const bearing = Math.atan2(
+    Math.sin(dLon) * Math.cos(lat2),
+    Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon)
+  );
+
+  return {
+    x: distance * Math.sin(bearing),
+    z: distance * Math.cos(bearing)
+  };
+}
+
+function getLocation() {
+  const targetLat = 48.28995554409128;
+  const targetLon = 14.282849641415106;
+
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      const userLatLon = {
+        lat: pos.coords.latitude,
+        lon: pos.coords.longitude
+      };
+
+      const offset = gpsToOffset(userLatLon, { lat: targetLat, lon: targetLon });
+      solarSystem.translation = [offset.x, 2, offset.z];
+
+      if (renderer && !scene.nodes.includes(solarSystem)) {
+        scene.addNode(solarSystem);
+      }
+
+      console.log(`✅ GPS working.
+📍 lat: ${userLatLon.lat.toFixed(6)}
+📍 lon: ${userLatLon.lon.toFixed(6)}
+📦 SolarSystem offset: X=${offset.x.toFixed(2)}m Z=${offset.z.toFixed(2)}m`);
+    }, err => {
+      console.warn('❌ GPS error: ' + err.message);
+    }, { enableHighAccuracy: true });
+  } else {
+    console.warn('❌ Geolocation not supported');
+  }
+}
+
+function initXR() {
         xrButton = new WebXRButton({
           onRequestSession: onRequestSession,
           onEndSession: onEndSession,
@@ -99,6 +150,7 @@
       }
 
       function onSessionStarted(session) {
+        getLocation();
         session.addEventListener('end', onSessionEnded);
 
         if (session.isImmersive) {
@@ -140,9 +192,7 @@
 
       function onXRFrame(t, frame) {
         let session = frame.session;
-        let refSpace = session.isImmersive ?
-                       xrImmersiveRefSpace :
-                       inlineViewerHelper.referenceSpace;
+        let refSpace = session.isImmersive ? xrImmersiveRefSpace : inlineViewerHelper.referenceSpace;
         let pose = frame.getViewerPose(refSpace);
 
         scene.startFrame();
