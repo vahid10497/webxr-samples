@@ -184,25 +184,12 @@ solarSystem.scale = [0.1, 0.1, 0.1];
         scene.startFrame();
         session.requestAnimationFrame(onXRFrame);
         scene.drawXRFrame(frame, pose);
-if (solarSystem.translation) {
+if (scene && scene.nodes && solarSystem.translation) {
   const solarX = solarSystem.translation[0].toFixed(2);
   const solarY = solarSystem.translation[1].toFixed(2);
   const solarZ = solarSystem.translation[2].toFixed(2);
 
-  const widgetNode = scene.nodes.length > 2 ? scene.nodes[2] : null; // assuming it's the third node (after skybox and solarSystem)
-  let widgetText = 'Widget pos: Not found';
-  if (widgetNode && widgetNode.translation) {
-    const widgetX = widgetNode.translation[0].toFixed(2);
-    const widgetY = widgetNode.translation[1].toFixed(2);
-    const widgetZ = widgetNode.translation[2].toFixed(2);
-    widgetText = `Widget pos:
-X: ${widgetX} m
-Y: ${widgetY} m
-Z: ${widgetZ} m`;
-  }
-
-  console.log(`✅ GPS working. SolarSystem pos: X: ${solarX} Y: ${solarY} Z: ${solarZ}`);
-console.log(widgetText);
+  
 }
 scene.endFrame();
       }
