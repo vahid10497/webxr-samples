@@ -25,7 +25,7 @@
         </p>
       </details>
     </header>
-    <div id="status" style="z-index: 9999; position: absolute; position:absolute;top:10px;left:10px;background:white;padding:8px;font-family:sans-serif;z-index:1000">Initializing...</div>
+    
     <script type="module">
       import {WebXRButton} from './js/util/webxr-button.js';
       import {Scene} from './js/render/scenes/scene.js';
@@ -105,7 +105,10 @@ solarSystem.scale = [0.1, 0.1, 0.1];
       }
 
       function onRequestSession() {
-        return navigator.xr.requestSession('immersive-ar')
+        return navigator.xr.requestSession('immersive-ar', {
+          requiredFeatures: ['dom-overlay'],
+          domOverlay: { root: document.body }
+        })
             .then((session) => {
               xrButton.setSession(session);
               session.isImmersive = true;
@@ -212,5 +215,6 @@ scene.endFrame();
 // Show status box only after AR starts
 
     </script>
-  </body>
+    <div id="status" style="position: absolute; top: 10px; left: 10px; background: white; padding: 8px; font-family: sans-serif; font-size: 14px; z-index: 9999;">Initializing...</div>
+</body>
 </html>
