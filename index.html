@@ -189,7 +189,7 @@ if (solarSystem.translation) {
   const solarY = solarSystem.translation[1].toFixed(2);
   const solarZ = solarSystem.translation[2].toFixed(2);
 
-  const widgetNode = scene.nodes[2]; // assuming it's the third node (after skybox and solarSystem)
+  const widgetNode = scene.nodes.length > 2 ? scene.nodes[2] : null; // assuming it's the third node (after skybox and solarSystem)
   let widgetText = 'Widget pos: Not found';
   if (widgetNode && widgetNode.translation) {
     const widgetX = widgetNode.translation[0].toFixed(2);
