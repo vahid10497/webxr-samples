@@ -88,7 +88,7 @@ function getLocation() {
       const offset = gpsToOffset(userLatLon, { lat: targetLat, lon: targetLon });
       solarSystem.translation = [offset.x, 2, offset.z];
 
-      if (renderer && !scene.nodes.includes(solarSystem)) {
+      if (renderer) {
         scene.addNode(solarSystem);
       }
 
