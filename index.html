@@ -94,6 +94,8 @@
 
         renderer = new Renderer(gl);
         scene.setRenderer(renderer);
+
+        getLocationAndPlaceModel();
       }
 
       function gpsToOffset(user, target) {
@@ -120,6 +122,7 @@
       }
 
       function getLocationAndPlaceModel() {
+        if (window.gpsPlaced) return;
         const targetLat = 48.28995554409128;
         const targetLon = 14.282849641415106;
 
@@ -135,6 +138,7 @@
             solarSystem.scale = [0.1, 0.1, 0.1];
             solarSystem.translation = [offset.x, 2, offset.z];
             scene.addNode(solarSystem);
+            window.gpsPlaced = true;
 
             console.log(`✅ GPS working.
 📍 lat: ${userLatLon.lat.toFixed(6)}
@@ -149,7 +153,6 @@
       }
 
       function onSessionStarted(session) {
-        getLocationAndPlaceModel();
         session.addEventListener('end', onSessionEnded);
 
         if (session.isImmersive) {
