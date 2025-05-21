@@ -207,12 +207,15 @@ function gpsToOffset(user, target) {
         scene.startFrame();
         session.requestAnimationFrame(onXRFrame);
         scene.drawXRFrame(frame, pose);
-if (scene && scene.nodes && solarSystem.translation) {
-  const solarX = solarSystem.translation[0].toFixed(2);
-  const solarY = solarSystem.translation[1].toFixed(2);
-  const solarZ = solarSystem.translation[2].toFixed(2);
-
-  console.log(`📦 SolarSystem position - X: ${solarX}, Y: ${solarY}, Z: ${solarZ}`);
+if (scene && scene.nodes) {
+  if (solarSystem.translation) {
+    const solarX = solarSystem.translation[0].toFixed(2);
+    const solarY = solarSystem.translation[1].toFixed(2);
+    const solarZ = solarSystem.translation[2].toFixed(2);
+    console.log(`📦 SolarSystem position - X: ${solarX}, Y: ${solarY}, Z: ${solarZ}`);
+  } else {
+    console.log("⏳ SolarSystem translation not yet available");
+  }
 }
 scene.endFrame();
       }
