@@ -131,6 +131,7 @@ solarSystem.scale = [0.1, 0.1, 0.1];
       }
 
       function onSessionStarted(session) {
+  document.getElementById('status').style.display = 'block';
         session.addEventListener('end', onSessionEnded);
 
         if (session.isImmersive) {
@@ -207,6 +208,10 @@ scene.endFrame();
       }
 
       initXR();
+
+// Show status box only after AR starts
+const statusBox = document.getElementById('status');
+statusBox.style.display = 'none';
     </script>
   </body>
 </html>
