@@ -48,8 +48,7 @@
       let renderer = null;
       let scene = new Scene();
       let solarSystem = new Gltf2Node({url: 'media/gltf/space/space.gltf'});
-      solarSystem.scale = [0.1, 0.1, 0.1];
-      scene.addNode(solarSystem);
+solarSystem.scale = [0.1, 0.1, 0.1];
       let skybox = new SkyboxNode({url: 'media/textures/milky-way-4k.png'});
       scene.addNode(skybox);
 
@@ -72,9 +71,9 @@
     lon: pos.coords.longitude
   };
 
-  // Apply GPS-based world offset
   const offset = gpsToOffset(userLatLon, { lat: targetLat, lon: targetLon });
-  solarSystem.translation = [offset.x, 3, offset.z]; // "2" for first floor height in meters
+  solarSystem.translation = [offset.x, 2, offset.z];
+  scene.addNode(solarSystem);
 
   updateStatus(`✅ GPS working.\n📍 lat: ${userLatLon.lat.toFixed(6)}\n📍 lon: ${userLatLon.lon.toFixed(6)}\n✅ Object placed via GPS`);
           }, err => {
