@@ -57,7 +57,6 @@
       const targetLat = 48.28995799844782;
       const targetLon = 14.282852284502516;
       let userLatLon = null;
-      let modelPlaced = false;
 
       function updateStatus(msg) {
         const el = document.getElementById('status');
@@ -72,33 +71,13 @@
               lat: pos.coords.latitude,
               lon: pos.coords.longitude
             };
-            updateStatus(`GPS: lat=${userLatLon.lat.toFixed(6)}, lon=${userLatLon.lon.toFixed(6)}`);
+            updateStatus(`✅ GPS working.\n📍 lat: ${userLatLon.lat.toFixed(6)}\n📍 lon: ${userLatLon.lon.toFixed(6)}\n✅ Object placed via GPS`);
           }, err => {
-            updateStatus('GPS error: ' + err.message);
+            updateStatus('❌ GPS error: ' + err.message);
           }, { enableHighAccuracy: true });
         } else {
-          updateStatus('Geolocation not supported');
+          updateStatus('❌ Geolocation not supported');
         }
-      }
-
-      function gpsToOffset(user, target) {
-        const R = 6371000;
-        const dLat = (target.lat - user.lat) * Math.PI / 180;
-        const dLon = (target.lon - user.lon) * Math.PI / 180;
-        const lat1 = user.lat * Math.PI / 180;
-        const lat2 = target.lat * Math.PI / 180;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                  Math.sin(dLon/2) * Math.sin(dLon/2) * Math.cos(lat1) * Math.cos(lat2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        const distance = R * c;
-        const bearing = Math.atan2(
-          Math.sin(dLon) * Math.cos(lat2),
-          Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon)
-        );
-        return {
-          x: distance * Math.sin(bearing),
-          z: distance * Math.cos(bearing)
-        };
       }
 
       function initXR() {
@@ -192,17 +171,6 @@
         let pose = frame.getViewerPose(refSpace);
 
         scene.startFrame();
-
-        if (userLatLon && !modelPlaced) {
-          const offset = gpsToOffset(userLatLon, { lat: targetLat, lon: targetLon });
-          const box = new Gltf2Node({ url: 'media/gltf/space/space.gltf' });
-          box.translation = [offset.x, 0, offset.z];
-          box.scale = [0.1, 0.1, 0.1];
-          scene.addNode(box);
-          updateStatus(`Object placed offset x: ${offset.x.toFixed(2)}m, z: ${offset.z.toFixed(2)}m`);
-          modelPlaced = true;
-        }
-
         session.requestAnimationFrame(onXRFrame);
         scene.drawXRFrame(frame, pose);
         scene.endFrame();
