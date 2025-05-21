@@ -134,6 +134,7 @@ solarSystem.scale = [0.1, 0.1, 0.1];
       }
 
       function onSessionStarted(session) {
+  document.querySelector('header').style.display = 'none';
   
         session.addEventListener('end', onSessionEnded);
 
