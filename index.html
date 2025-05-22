@@ -95,9 +95,7 @@
         renderer = new Renderer(gl);
         scene.setRenderer(renderer);
 
-        setTimeout(getLocationAndPlaceModel, 3000);
-
-        setTimeout(getLocationAndPlaceModel, 3000);
+        getLocationAndPlaceModel();
       }
 
       function gpsToOffset(user, target) {
@@ -123,7 +121,17 @@
         };
       }
 
-      
+      function getLocationAndPlaceModel() {
+        if (window.gpsPlaced) return;
+        const targetLat = 48.28994506928232;
+        const targetLon = 14.282882682071433;
+
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(pos => {
+            const userLatLon = {
+              lat: pos.coords.latitude,
+              lon: pos.coords.longitude
+            };
 
             const offset = gpsToOffset(userLatLon, { lat: targetLat, lon: targetLon });
             window.fixedOffset = offset;
@@ -133,10 +141,10 @@
             scene.addNode(solarSystem);
             window.gpsPlaced = true;
 
-            console.log(`✅ GPS working.
+            console.log(✅ GPS working.
 📍 lat: ${userLatLon.lat.toFixed(6)}
 📍 lon: ${userLatLon.lon.toFixed(6)}
-📦 SolarSystem offset: X=${offset.x.toFixed(2)}m Z=${offset.z.toFixed(2)}m`);
+📦 SolarSystem offset: X=${offset.x.toFixed(2)}m Z=${offset.z.toFixed(2)}m);
           }, err => {
             console.warn('❌ GPS error: ' + err.message);
           }, { enableHighAccuracy: true });
@@ -197,11 +205,6 @@
       }
 
       initXR();
-    window.addEventListener('deviceorientationabsolute', (event) => {
-  if (event.absolute && event.alpha !== null) {
-    window.latestHeading = event.alpha;
-  }
-});
-</script>
+    </script>
   </body>
 </html>
