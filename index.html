@@ -95,7 +95,7 @@
         renderer = new Renderer(gl);
         scene.setRenderer(renderer);
 
-        getLocationAndPlaceModel();
+        setTimeout(getLocationAndPlaceModel, 2000);
       }
 
       function gpsToOffset(user, target) {
@@ -123,8 +123,8 @@
 
       function getLocationAndPlaceModel() {
         if (window.gpsPlaced) return;
-        const targetLat = 48.28994506928232;
-        const targetLon = 14.282882682071433;
+        const targetLat = 48.290453560042685;
+        const targetLon = 14.282291275508184;
 
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(pos => {
