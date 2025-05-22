@@ -158,10 +158,6 @@
     console.warn('❌ GPS error: ' + err.message);
   }, { enableHighAccuracy: true });
 }
-    }
-  }, err => {
-    console.warn('❌ GPS error: ' + err.message);
-  }, { enableHighAccuracy: true });
 };
 
             const offset = gpsToOffset(userLatLon, { lat: targetLat, lon: targetLon });
