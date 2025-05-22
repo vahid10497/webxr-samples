@@ -1,4 +1,4 @@
-<!doctype html>
+<!doctype html> 
 <html>
   <head>
     <meta charset='utf-8'>
@@ -45,7 +45,8 @@
       let gl = null;
       let renderer = null;
       let scene = new Scene();
-      let solarSystem = null;
+      let solarSystem = new Gltf2Node({url: 'media/gltf/space/space.gltf'});
+      solarSystem.scale = [0.1, 0.1, 0.1];
       // Will add after GPS resolves
 
       let skybox = new SkyboxNode({url: 'media/textures/milky-way-4k.png'});
@@ -94,8 +95,6 @@
 
         renderer = new Renderer(gl);
         scene.setRenderer(renderer);
-
-        getLocationAndPlaceModel();
       }
 
       function gpsToOffset(user, target) {
@@ -122,9 +121,8 @@
       }
 
       function getLocationAndPlaceModel() {
-        if (window.gpsPlaced) return;
-        const targetLat = 48.290453560042685;
-        const targetLon = 14.282291275508184;
+        const targetLat = 48.28995554409128;
+        const targetLon = 14.282849641415106;
 
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(pos => {
@@ -134,12 +132,8 @@
             };
 
             const offset = gpsToOffset(userLatLon, { lat: targetLat, lon: targetLon });
-            window.fixedOffset = offset;
-            solarSystem = new Gltf2Node({url: 'media/gltf/space/space.gltf'});
-            solarSystem.scale = [0.1, 0.1, 0.1];
-            solarSystem.translation = [window.fixedOffset.x, 2, window.fixedOffset.z];
+            solarSystem.translation = [offset.x, 2, offset.z];
             scene.addNode(solarSystem);
-            window.gpsPlaced = true;
 
             console.log(✅ GPS working.
 📍 lat: ${userLatLon.lat.toFixed(6)}
@@ -154,6 +148,7 @@
       }
 
       function onSessionStarted(session) {
+        getLocationAndPlaceModel();
         session.addEventListener('end', onSessionEnded);
 
         if (session.isImmersive) {
@@ -208,5 +203,3 @@
     </script>
   </body>
 </html>
-
-
