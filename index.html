@@ -95,7 +95,7 @@
         renderer = new Renderer(gl);
         scene.setRenderer(renderer);
 
-        getLocationAndPlaceModel();
+        setTimeout(getLocationAndPlaceModel, 3000);
       }
 
       function gpsToOffset(user, target) {
