@@ -138,7 +138,11 @@
             solarSystem = new Gltf2Node({url: 'media/gltf/space/space.gltf'});
             solarSystem.scale = [0.1, 0.1, 0.1];
             solarSystem.translation = [window.fixedOffset.x, 2, window.fixedOffset.z];
-            scene.addNode(solarSystem);
+            if (window.latestHeading !== undefined) {
+  const headingRad = -window.latestHeading * Math.PI / 180;
+  solarSystem.rotation = [0, headingRad, 0];
+}
+scene.addNode(solarSystem);
             window.gpsPlaced = true;
 
             console.log(`✅ GPS working.
@@ -205,6 +209,11 @@
       }
 
       initXR();
-    </script>
+    window.addEventListener('deviceorientationabsolute', (event) => {
+  if (event.absolute && event.alpha !== null) {
+    window.latestHeading = event.alpha;
+  }
+});
+</script>
   </body>
 </html>
