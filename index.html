@@ -141,10 +141,10 @@
             scene.addNode(solarSystem);
             window.gpsPlaced = true;
 
-            console.log(`✅ GPS working.
+            console.log(✅ GPS working.
 📍 lat: ${userLatLon.lat.toFixed(6)}
 📍 lon: ${userLatLon.lon.toFixed(6)}
-📦 SolarSystem offset: X=${offset.x.toFixed(2)}m Z=${offset.z.toFixed(2)}m`);
+📦 SolarSystem offset: X=${offset.x.toFixed(2)}m Z=${offset.z.toFixed(2)}m);
           }, err => {
             console.warn('❌ GPS error: ' + err.message);
           }, { enableHighAccuracy: true });
@@ -164,7 +164,7 @@
 
         session.updateRenderState({ baseLayer: new XRWebGLLayer(session, gl) });
 
-        let refSpaceType = session.isImmersive ? 'local-floor' : 'viewer';
+        let refSpaceType = session.isImmersive ? 'local' : 'viewer';
         session.requestReferenceSpace(refSpaceType).then((refSpace) => {
           if (session.isImmersive) {
             xrImmersiveRefSpace = refSpace;
@@ -208,3 +208,5 @@
     </script>
   </body>
 </html>
+
+
