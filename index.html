@@ -95,7 +95,7 @@
         renderer = new Renderer(gl);
         scene.setRenderer(renderer);
 
-        startWatchingPosition();
+        setTimeout(getLocationAndPlaceModel, 3000);
       }
 
       function gpsToOffset(user, target) {
@@ -121,44 +121,7 @@
         };
       }
 
-      function startWatchingPosition() {
-  const targetLat = 48.290453560042685;
-  const targetLon = 14.282291275508184;
-  let watchId = navigator.geolocation.watchPosition(pos => {
-    const accuracy = pos.coords.accuracy;
-    console.log(`📡 GPS accuracy: ${accuracy.toFixed(2)}m`);
-
-    if (accuracy < 12 && !window.gpsPlaced) {
-      const userLatLon = {
-        lat: pos.coords.latitude,
-        lon: pos.coords.longitude
-      };
-
-      const offset = gpsToOffset(userLatLon, { lat: targetLat, lon: targetLon });
-      window.fixedOffset = offset;
-      solarSystem = new Gltf2Node({url: 'media/gltf/space/space.gltf'});
-      solarSystem.scale = [0.1, 0.1, 0.1];
-      solarSystem.translation = [offset.x, 2, offset.z];
-
-      if (window.latestHeading !== undefined) {
-        const headingRad = -window.latestHeading * Math.PI / 180;
-        solarSystem.rotation = [0, headingRad, 0];
-      }
-
-      scene.addNode(solarSystem);
-      window.gpsPlaced = true;
-
-      console.log(`✅ GPS working.
-📍 lat: ${userLatLon.lat.toFixed(6)}
-📍 lon: ${userLatLon.lon.toFixed(6)}
-📦 SolarSystem offset: X=${offset.x.toFixed(2)}m Z=${offset.z.toFixed(2)}m`);
-      navigator.geolocation.clearWatch(watchId);
-    }
-  }, err => {
-    console.warn('❌ GPS error: ' + err.message);
-  }, { enableHighAccuracy: true });
-}
-};
+      
 
             const offset = gpsToOffset(userLatLon, { lat: targetLat, lon: targetLon });
             window.fixedOffset = offset;
