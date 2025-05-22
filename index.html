@@ -1,4 +1,4 @@
-<!doctype html>
+we continue just with this code that called v2vfi <!doctype html>
 <html>
   <head>
     <meta charset='utf-8'>
@@ -141,10 +141,10 @@
             scene.addNode(solarSystem);
             window.gpsPlaced = true;
 
-            console.log(✅ GPS working.
+            console.log(`✅ GPS working.
 📍 lat: ${userLatLon.lat.toFixed(6)}
 📍 lon: ${userLatLon.lon.toFixed(6)}
-📦 SolarSystem offset: X=${offset.x.toFixed(2)}m Z=${offset.z.toFixed(2)}m);
+📦 SolarSystem offset: X=${offset.x.toFixed(2)}m Z=${offset.z.toFixed(2)}m`);
           }, err => {
             console.warn('❌ GPS error: ' + err.message);
           }, { enableHighAccuracy: true });
