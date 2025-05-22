@@ -95,7 +95,9 @@
         renderer = new Renderer(gl);
         scene.setRenderer(renderer);
 
-        getLocationAndPlaceModel();
+        setTimeout(getLocationAndPlaceModel, 3000);
+
+        setTimeout(getLocationAndPlaceModel, 3000);
       }
 
       function gpsToOffset(user, target) {
@@ -121,17 +123,7 @@
         };
       }
 
-      function getLocationAndPlaceModel() {
-        if (window.gpsPlaced) return;
-        const targetLat = 48.28994506928232;
-        const targetLon = 14.282882682071433;
-
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(pos => {
-            const userLatLon = {
-              lat: pos.coords.latitude,
-              lon: pos.coords.longitude
-            };
+      
 
             const offset = gpsToOffset(userLatLon, { lat: targetLat, lon: targetLon });
             window.fixedOffset = offset;
@@ -205,6 +197,11 @@
       }
 
       initXR();
-    </script>
+    window.addEventListener('deviceorientationabsolute', (event) => {
+  if (event.absolute && event.alpha !== null) {
+    window.latestHeading = event.alpha;
+  }
+});
+</script>
   </body>
 </html>
