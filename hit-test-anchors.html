@@ -19,162 +19,152 @@ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 -->
-<html lang="en">
+<html>
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset='utf-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
   <title>WebXR Audio Portal</title>
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      background: transparent;
-      touch-action: none;
-    }
-    canvas {
-      position: fixed;
-      width: 100%;
-      height: 100%;
-      top: 0;
-      left: 0;
-    }
-    #enter-ar {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      background: white;
-      border: none;
-      padding: 10px;
-      z-index: 10;
-      font-weight: bold;
-      font-size: 14px;
-    }
-    #first-image, #earphone-icon {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      max-width: 90%;
-      opacity: 0.7;
-      z-index: 9;
-      display: none;
-    }
-  </style>
 </head>
 <body>
-  <button id="enter-ar">START AR</button>
-  <img id="first-image" src="Firstimage.png" alt="AR Guide">
-  <img id="earphone-icon" src="earphone.png" alt="Audio Icon">
-  <canvas id="xr-canvas"></canvas>
-
   <script type="module">
-    import * as THREE from './three.module.js';
-    import { GLTFLoader } from './GLTFLoader.js';
+    import {WebXRButton} from './js/util/webxr-button.js';
+    import {Scene} from './js/render/scenes/scene.js';
+    import {Renderer, createWebGLContext} from './js/render/core/renderer.js';
+    import {Node} from './js/render/core/node.js';
+    import {Gltf2Node} from './js/render/nodes/gltf2.js';
+    import {DropShadowNode} from './js/render/nodes/drop-shadow.js';
+    import {vec3} from './js/render/math/gl-matrix.js';
+    import {Ray} from './js/render/math/ray.js';
 
-    const canvas = document.getElementById('xr-canvas');
-    const button = document.getElementById('enter-ar');
-    const gl = canvas.getContext('webgl', { xrCompatible: true });
-    const renderer = new THREE.WebGLRenderer({ canvas, context: gl });
-    renderer.autoClear = false;
+    let xrButton = null;
+    let xrRefSpace = null;
+    let xrViewerSpace = null;
+    let xrHitTestSource = null;
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera();
-    const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
-    scene.add(light);
+    let gl = null;
+    let renderer = null;
+    let scene = new Scene();
+    scene.enableStats(false);
 
-    const loader = new GLTFLoader();
-    const anchorModels = [];
+    let arObject = new Node();
+    arObject.visible = false;
+    scene.addNode(arObject);
+
+    let flower = new Gltf2Node({url: 'media/gltf/sunflower/sunflower.gltf'});
+    arObject.addNode(flower);
+
+    let reticle = new Gltf2Node({url: 'media/gltf/reticle/reticle.gltf'});
+    reticle.visible = false;
+    scene.addNode(reticle);
+    let reticleHitTestResult = null;
+
+    let shadow = new DropShadowNode();
+    vec3.set(shadow.scale, 0.15, 0.15, 0.15);
+    arObject.addNode(shadow);
+
+    let sceneClear = false;
+    scene.clear = sceneClear;
+
     let modelPlaced = false;
 
-    let hitTestSource = null;
-    let viewerSpace = null;
-    let localSpace = null;
-
-    const firstImage = document.getElementById('first-image');
-    const earphoneIcon = document.getElementById('earphone-icon');
-    const audio = new Audio('museumversion_250709.mp3');
-    audio.loop = true;
-
-    button.addEventListener('click', async () => {
-      if (!navigator.xr) return alert('WebXR not supported');
-      const supported = await navigator.xr.isSessionSupported('immersive-ar');
-      if (!supported) return alert('AR not supported on this device');
-
-      firstImage.style.display = 'block';
-
-      const session = await navigator.xr.requestSession('immersive-ar', {
-        requiredFeatures: ['hit-test', 'local', 'anchors']
+    function initXR() {
+      xrButton = new WebXRButton({
+        onRequestSession: onRequestSession,
+        onEndSession: onEndSession,
+        textEnterXRTitle: "START AR",
+        textXRNotFoundTitle: "AR NOT FOUND",
+        textExitXRTitle: "EXIT AR",
       });
+      document.body.appendChild(xrButton.domElement);
 
-      button.style.display = 'none';
+      if (navigator.xr) {
+        navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
+          xrButton.enabled = supported;
+        });
+      }
+    }
+
+    function onRequestSession() {
+      return navigator.xr.requestSession('immersive-ar', {requiredFeatures: ['local', 'hit-test', 'anchors']})
+        .then((session) => {
+          xrButton.setSession(session);
+          onSessionStarted(session);
+        });
+    }
+
+    function onSessionStarted(session) {
+      session.addEventListener('end', onSessionEnded);
+      session.addEventListener('select', onSelect);
+
+      if (!gl) {
+        gl = createWebGLContext({ xrCompatible: true });
+        renderer = new Renderer(gl);
+        scene.setRenderer(renderer);
+      }
 
       session.updateRenderState({ baseLayer: new XRWebGLLayer(session, gl) });
-      localSpace = await session.requestReferenceSpace('local');
-      viewerSpace = await session.requestReferenceSpace('viewer');
-      hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
 
-      const referenceSpace = localSpace;
-
-      session.addEventListener('select', async (event) => {
-        if (modelPlaced) return;
-
-        const frame = event.frame;
-        const hitTestResults = frame.getHitTestResults(hitTestSource);
-        if (hitTestResults.length > 0) {
-          modelPlaced = true;
-          firstImage.style.display = 'none';
-          earphoneIcon.style.display = 'block';
-          setTimeout(() => {
-            earphoneIcon.style.display = 'none';
-          }, 5000);
-
-          const hit = hitTestResults[0];
-          const anchor = await hit.createAnchor();
-          const anchorSpace = anchor.anchorSpace;
-
-          const anchorObject = new THREE.Object3D();
-          anchorObject.position.set(0, 0, 0.5);
-          scene.add(anchorObject);
-          anchorModels.push({ anchorSpace, anchorObject });
-
-          loader.load('PortalANimMus-02.glb', gltf => {
-            anchorObject.add(gltf.scene);
-            setTimeout(() => audio.play(), 5000);
-          });
-        }
+      session.requestReferenceSpace('viewer').then((refSpace) => {
+        xrViewerSpace = refSpace;
+        session.requestHitTestSource({ space: xrViewerSpace }).then((hitTestSource) => {
+          xrHitTestSource = hitTestSource;
+        });
       });
 
-      session.requestAnimationFrame(onXRFrame);
-
-      function onXRFrame(time, frame) {
-        const session = frame.session;
+      session.requestReferenceSpace('local').then((refSpace) => {
+        xrRefSpace = refSpace;
         session.requestAnimationFrame(onXRFrame);
+      });
+    }
 
-        const pose = frame.getViewerPose(referenceSpace);
-        if (!pose) return;
+    function onEndSession(session) {
+      xrHitTestSource.cancel();
+      xrHitTestSource = null;
+      session.end();
+    }
 
-        gl.bindFramebuffer(gl.FRAMEBUFFER, session.renderState.baseLayer.framebuffer);
-        renderer.clear();
+    function onSessionEnded(event) {
+      xrButton.setSession(null);
+    }
 
-        for (const source of frame.trackedAnchors || []) {
-          const anchor = anchorModels.find(a => a.anchorSpace === source.anchorSpace);
-          if (anchor) {
-            const pose = frame.getPose(source.anchorSpace, referenceSpace);
-            if (pose) {
-              anchor.anchorObject.matrix.fromArray(pose.transform.matrix);
-              anchor.anchorObject.matrix.decompose(
-                anchor.anchorObject.position,
-                anchor.anchorObject.quaternion,
-                anchor.anchorObject.scale
-              );
-            }
-          }
+    function onSelect(event) {
+      if (modelPlaced || !reticle.visible) return;
+      modelPlaced = true;
+
+      reticleHitTestResult.createAnchor().then((anchor) => {
+        arObject.visible = true;
+        scene.addNode(arObject);
+        anchor.anchorSpace.getPose().then(pose => {
+          arObject.matrix = pose.transform.matrix;
+        });
+      }, (error) => {
+        console.error("Could not create anchor: " + error);
+      });
+    }
+
+    function onXRFrame(t, frame) {
+      let session = frame.session;
+      let pose = frame.getViewerPose(xrRefSpace);
+
+      reticle.visible = false;
+
+      if (xrHitTestSource && pose) {
+        let hitTestResults = frame.getHitTestResults(xrHitTestSource);
+        if (hitTestResults.length > 0) {
+          let pose = hitTestResults[0].getPose(xrRefSpace);
+          reticle.visible = true;
+          reticle.matrix = pose.transform.matrix;
+          reticleHitTestResult = hitTestResults[0];
         }
-
-        renderer.render(scene, camera);
       }
-    });
+
+      scene.startFrame();
+      session.requestAnimationFrame(onXRFrame);
+      scene.drawXRFrame(frame, pose);
+      scene.endFrame();
+    }
+
+    initXR();
   </script>
 </body>
 </html>
