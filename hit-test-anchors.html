@@ -51,13 +51,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       import {vec3} from './js/render/math/gl-matrix.js';
       import {Ray} from './js/render/math/ray.js';
 
-      // XR globals.
       let xrButton = null;
       let xrRefSpace = null;
       let xrViewerSpace = null;
       let xrHitTestSource = null;
 
-      // WebGL scene globals.
       let gl = null;
       let renderer = null;
       let scene = new Scene();
@@ -75,8 +73,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       scene.addNode(reticle);
       let reticleHitTestResult = null;
 
-      // Having a really simple drop shadow underneath an object helps ground
-      // it in the world without adding much complexity.
       let shadow = new DropShadowNode();
       vec3.set(shadow.scale, 0.15, 0.15, 0.15);
       arObject.addNode(shadow);
@@ -84,7 +80,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       const MAX_FLOWERS = 30;
       let flowers = [];
 
-      // Ensure the background is transparent for AR.
       scene.clear = false;
 
       function initXR() {
@@ -118,21 +113,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         session.addEventListener('select', onSelect);
 
         if (!gl) {
-          gl = createWebGLContext({
-            xrCompatible: true
-          });
-
+          gl = createWebGLContext({ xrCompatible: true });
           renderer = new Renderer(gl);
-
           scene.setRenderer(renderer);
         }
 
         session.updateRenderState({ baseLayer: new XRWebGLLayer(session, gl) });
 
-        // In this sample we want to cast a ray straight out from the viewer's
-        // position and render a reticle where it intersects with a real world
-        // surface. To do this we first get the viewer space, then create a
-        // hitTestSource that tracks it.
         session.requestReferenceSpace('viewer').then((refSpace) => {
           xrViewerSpace = refSpace;
           session.requestHitTestSource({ space: xrViewerSpace }).then((hitTestSource) => {
@@ -142,13 +129,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
         session.requestReferenceSpace('local').then((refSpace) => {
           xrRefSpace = refSpace;
-
           session.requestAnimationFrame(onXRFrame);
         });
       }
 
       function onEndSession(session) {
-        anchoredObjects.clear();
         xrHitTestSource.cancel();
         xrHitTestSource = null;
         session.end();
@@ -168,9 +153,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
           anchor: anchor
         });
 
-        // For performance reasons if we add too many objects start
-        // removing the oldest ones to keep the scene complexity
-        // from growing too much.
         if (anchoredObjects.length > MAX_ANCHORED_OBJECTS) {
           let objectToRemove = anchoredObjects.shift();
           scene.removeNode(objectToRemove.anchoredObject);
@@ -182,7 +164,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       let rayDirection = vec3.create();
       function onSelect(event) {
         if (reticle.visible) {
-          // Create an anchor.
           reticleHitTestResult.createAnchor().then((anchor) => {
             addAnchoredObjectsToScene(anchor);
           }, (error) => {
@@ -191,15 +172,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         }
       }
 
-      // Called every time a XRSession requests that a new frame be drawn.
       function onXRFrame(t, frame) {
         let session = frame.session;
         let pose = frame.getViewerPose(xrRefSpace);
 
         reticle.visible = false;
 
-        // If we have a hit test source, get its results for the frame
-        // and use the pose to display a reticle in the scene.
         if (xrHitTestSource && pose) {
           let hitTestResults = frame.getHitTestResults(xrHitTestSource);
           if (hitTestResults.length > 0) {
@@ -211,8 +189,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         }
 
         for (const {anchoredObject, anchor} of anchoredObjects) {
-          // only update the object's position if it's still in the list
-          // of frame.trackedAnchors
           if (!frame.trackedAnchors.has(anchor)) {
             continue;
           }
@@ -221,15 +197,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         }
 
         scene.startFrame();
-
         session.requestAnimationFrame(onXRFrame);
-
         scene.drawXRFrame(frame, pose);
-
         scene.endFrame();
       }
 
-      // Start the XR application.
       initXR();
     </script>
   </body>
