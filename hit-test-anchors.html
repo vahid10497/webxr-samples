@@ -148,6 +148,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         reticleHitTestResult.createAnchor().then((anchor) => {
           arObject.visible = true;
           flowerPlaced = true;
+          reticle.visible = false; // Hide reticle after placing
           const anchorPose = anchor.anchorSpace;
           arObject.matrix = reticle.matrix;
         }, (error) => {
@@ -159,15 +160,17 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         let session = frame.session;
         let pose = frame.getViewerPose(xrRefSpace);
 
-        reticle.visible = false;
+        if (!flowerPlaced) {
+          reticle.visible = false;
 
-        if (xrHitTestSource && pose) {
-          let hitTestResults = frame.getHitTestResults(xrHitTestSource);
-          if (hitTestResults.length > 0) {
-            let pose = hitTestResults[0].getPose(xrRefSpace);
-            reticle.visible = true;
-            reticle.matrix = pose.transform.matrix;
-            reticleHitTestResult = hitTestResults[0];
+          if (xrHitTestSource && pose) {
+            let hitTestResults = frame.getHitTestResults(xrHitTestSource);
+            if (hitTestResults.length > 0) {
+              let pose = hitTestResults[0].getPose(xrRefSpace);
+              reticle.visible = true;
+              reticle.matrix = pose.transform.matrix;
+              reticleHitTestResult = hitTestResults[0];
+            }
           }
         }
 
