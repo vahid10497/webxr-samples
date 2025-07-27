@@ -28,7 +28,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     <link rel='icon' type='image/png' sizes='32x32' href='favicon-32x32.png'>
     <link rel='icon' type='image/png' sizes='96x96' href='favicon-96x96.png'>
     <link rel='stylesheet' href='css/common.css'>
-
     <title>Hit Test with Anchors</title>
   </head>
   <body>
@@ -78,7 +77,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       arObject.addNode(shadow);
 
       let flowerPlaced = false;
-
       scene.clear = false;
 
       function initXR() {
@@ -100,8 +98,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       }
 
       function onRequestSession() {
-        return navigator.xr.requestSession('immersive-ar', {requiredFeatures: ['local', 'hit-test', 'anchors']})
-                           .then((session) => {
+        return navigator.xr.requestSession('immersive-ar', {
+          requiredFeatures: ['local', 'hit-test', 'anchors'],
+          domOverlay: { root: document.body }
+        }).then((session) => {
           xrButton.setSession(session);
           onSessionStarted(session);
         });
@@ -121,7 +121,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
         session.requestReferenceSpace('viewer').then((refSpace) => {
           xrViewerSpace = refSpace;
-          session.requestHitTestSource({ space: xrViewerSpace }).then((hitTestSource) => {
+          session.requestHitTestSourceForTransientInput({ profile: 'generic-touchscreen' }).then((hitTestSource) => {
             xrHitTestSource = hitTestSource;
           });
         });
@@ -148,8 +148,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         reticleHitTestResult.createAnchor().then((anchor) => {
           arObject.visible = true;
           flowerPlaced = true;
-          reticle.visible = false; // Hide reticle after placing
-          const anchorPose = anchor.anchorSpace;
+          reticle.visible = false;
           arObject.matrix = reticle.matrix;
         }, (error) => {
           console.error("Could not create anchor: " + error);
@@ -165,11 +164,17 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
           if (xrHitTestSource && pose) {
             let hitTestResults = frame.getHitTestResults(xrHitTestSource);
-            if (hitTestResults.length > 0) {
-              let pose = hitTestResults[0].getPose(xrRefSpace);
-              reticle.visible = true;
-              reticle.matrix = pose.transform.matrix;
-              reticleHitTestResult = hitTestResults[0];
+            for (let result of hitTestResults) {
+              const hitPose = result.getPose(xrRefSpace);
+              const yAxis = [0, 1, 0];
+              const normal = [hitPose.transform.matrix[4], hitPose.transform.matrix[5], hitPose.transform.matrix[6]];
+              const dot = vec3.dot(normal, yAxis);
+              if (Math.abs(dot) < 0.5) { // ignore floor/ceiling (dot close to 1 or -1)
+                reticle.visible = true;
+                reticle.matrix = hitPose.transform.matrix;
+                reticleHitTestResult = result;
+                break;
+              }
             }
           }
         }
