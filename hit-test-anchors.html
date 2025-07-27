@@ -35,7 +35,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       <details open>
         <summary>Hit Test with Anchors</summary>
         <p>
-          This sample demonstrates using hit testing to find intersections on real-world surfaces and then using Anchors to attach a virtual object to that location.
+          This sample demonstrates using hit testing to find intersections on vertical (wall) surfaces and then using Anchors to attach a virtual object to that location.
           <a class="back" href="./">Back</a>
         </p>
       </details>
@@ -142,6 +142,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         xrButton.setSession(null);
       }
 
+      function isWallSurface(hitPoseMatrix) {
+        const up = [0, 1, 0];
+        const zAxis = [hitPoseMatrix[8], hitPoseMatrix[9], hitPoseMatrix[10]];
+        const dot = Math.abs(zAxis[1]);
+        return dot < 0.5;
+      }
+
       function onSelect(event) {
         if (flowerPlaced || !reticle.visible) return;
 
@@ -166,9 +173,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             const hitTestResults = frame.getHitTestResults(xrHitTestSource);
             if (hitTestResults.length > 0) {
               const hitPose = hitTestResults[0].getPose(xrRefSpace);
-              reticle.visible = true;
-              reticle.matrix = hitPose.transform.matrix;
-              reticleHitTestResult = hitTestResults[0];
+              if (isWallSurface(hitPose.transform.matrix)) {
+                reticle.visible = true;
+                reticle.matrix = hitPose.transform.matrix;
+                reticleHitTestResult = hitTestResults[0];
+              }
             }
           }
         }
