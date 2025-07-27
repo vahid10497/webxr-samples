@@ -121,7 +121,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
         session.requestReferenceSpace('viewer').then((refSpace) => {
           xrViewerSpace = refSpace;
-          session.requestHitTestSourceForTransientInput({ profile: 'generic-touchscreen' }).then((hitTestSource) => {
+          session.requestHitTestSource({ space: xrViewerSpace }).then((hitTestSource) => {
             xrHitTestSource = hitTestSource;
           });
         });
@@ -164,17 +164,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
           if (xrHitTestSource && pose) {
             const hitTestResults = frame.getHitTestResults(xrHitTestSource);
-            for (const result of hitTestResults) {
-              const hitPose = result.getPose(xrRefSpace);
-              const yAxis = [0, 1, 0];
-              const normal = [hitPose.transform.matrix[4], hitPose.transform.matrix[5], hitPose.transform.matrix[6]];
-              const dot = vec3.dot(normal, yAxis);
-              if (Math.abs(dot) < 0.5) {
-                reticle.visible = true;
-                reticle.matrix = hitPose.transform.matrix;
-                reticleHitTestResult = result;
-                break;
-              }
+            if (hitTestResults.length > 0) {
+              const hitPose = hitTestResults[0].getPose(xrRefSpace);
+              reticle.visible = true;
+              reticle.matrix = hitPose.transform.matrix;
+              reticleHitTestResult = hitTestResults[0];
             }
           }
         }
