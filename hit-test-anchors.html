@@ -28,16 +28,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     <link rel='icon' type='image/png' sizes='32x32' href='favicon-32x32.png'>
     <link rel='icon' type='image/png' sizes='96x96' href='favicon-96x96.png'>
     <link rel='stylesheet' href='css/common.css'>
-    <title>Hit Test with Anchors</title>
+    <title>Hit Test with Anchors (Wall Only)</title>
   </head>
   <body>
     <header>
       <details open>
-        <summary>Hit Test with Anchors</summary>
-        <p>
-          This sample demonstrates using hit testing to find intersections on vertical (wall) surfaces and then using Anchors to attach a virtual object to that location.
-          <a class="back" href="./">Back</a>
-        </p>
+        <summary>Hit Test with Anchors (Wall Only)</summary>
+        <p>This AR sample only places objects on vertical (wall) surfaces using hit testing and anchors.</p>
       </details>
     </header>
     <script type="module">
@@ -48,7 +45,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       import {Gltf2Node} from './js/render/nodes/gltf2.js';
       import {DropShadowNode} from './js/render/nodes/drop-shadow.js';
       import {vec3} from './js/render/math/gl-matrix.js';
-      import {Ray} from './js/render/math/ray.js';
 
       let xrButton = null;
       let xrRefSpace = null;
@@ -85,15 +81,15 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
           onEndSession: onEndSession,
           textEnterXRTitle: "START AR",
           textXRNotFoundTitle: "AR NOT FOUND",
-          textExitXRTitle: "EXIT  AR",
+          textExitXRTitle: "EXIT AR",
         });
         document.querySelector('header').appendChild(xrButton.domElement);
 
         if (navigator.xr) {
           navigator.xr.isSessionSupported('immersive-ar')
-                      .then((supported) => {
-            xrButton.enabled = supported;
-          });
+            .then((supported) => {
+              xrButton.enabled = supported;
+            });
         }
       }
 
@@ -133,8 +129,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       }
 
       function onEndSession(session) {
-        xrHitTestSource.cancel();
-        xrHitTestSource = null;
+        if (xrHitTestSource) {
+          xrHitTestSource.cancel();
+          xrHitTestSource = null;
+        }
         session.end();
       }
 
@@ -142,11 +140,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         xrButton.setSession(null);
       }
 
-      function isWallSurface(hitPoseMatrix) {
-        const up = [0, 1, 0];
-        const zAxis = [hitPoseMatrix[8], hitPoseMatrix[9], hitPoseMatrix[10]];
-        const dot = Math.abs(zAxis[1]);
-        return dot < 0.5;
+      function isWallSurface(matrix) {
+        // Use the Y component of the Z axis of the transform to determine wall vs floor.
+        const zAxisY = matrix[9]; // index 9 corresponds to Y component of Z axis
+        return Math.abs(zAxisY) < 0.4; // close to horizontal Z axis means vertical wall
       }
 
       function onSelect(event) {
@@ -157,9 +154,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
           flowerPlaced = true;
           reticle.visible = false;
           arObject.matrix = reticle.matrix;
-        }, (error) => {
-          console.error("Could not create anchor: " + error);
-        });
+        }).catch(console.error);
       }
 
       function onXRFrame(t, frame) {
@@ -171,12 +166,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
           if (xrHitTestSource && pose) {
             const hitTestResults = frame.getHitTestResults(xrHitTestSource);
-            for (let i = 0; i < hitTestResults.length; i++) {
-              const hitPose = hitTestResults[i].getPose(xrRefSpace);
+            for (const result of hitTestResults) {
+              const hitPose = result.getPose(xrRefSpace);
               if (isWallSurface(hitPose.transform.matrix)) {
-                reticle.visible = true;
                 reticle.matrix = hitPose.transform.matrix;
-                reticleHitTestResult = hitTestResults[i];
+                reticleHitTestResult = result;
+                reticle.visible = true;
                 break;
               }
             }
