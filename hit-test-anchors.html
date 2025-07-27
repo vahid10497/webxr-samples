@@ -171,12 +171,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
           if (xrHitTestSource && pose) {
             const hitTestResults = frame.getHitTestResults(xrHitTestSource);
-            if (hitTestResults.length > 0) {
-              const hitPose = hitTestResults[0].getPose(xrRefSpace);
+            for (let i = 0; i < hitTestResults.length; i++) {
+              const hitPose = hitTestResults[i].getPose(xrRefSpace);
               if (isWallSurface(hitPose.transform.matrix)) {
                 reticle.visible = true;
                 reticle.matrix = hitPose.transform.matrix;
-                reticleHitTestResult = hitTestResults[0];
+                reticleHitTestResult = hitTestResults[i];
+                break;
               }
             }
           }
