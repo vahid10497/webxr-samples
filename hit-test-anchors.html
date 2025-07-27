@@ -77,8 +77,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       vec3.set(shadow.scale, 0.15, 0.15, 0.15);
       arObject.addNode(shadow);
 
-      const MAX_FLOWERS = 30;
-      let flowers = [];
+      let flowerPlaced = false;
 
       scene.clear = false;
 
@@ -143,33 +142,17 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         xrButton.setSession(null);
       }
 
-      const MAX_ANCHORED_OBJECTS = 30;
-      let anchoredObjects = [];
-      function addAnchoredObjectsToScene(anchor) {
-        let flower = new Gltf2Node({url: 'media/gltf/sunflower/sunflower.gltf'});
-        scene.addNode(flower);
-        anchoredObjects.push({
-          anchoredObject: flower,
-          anchor: anchor
-        });
-
-        if (anchoredObjects.length > MAX_ANCHORED_OBJECTS) {
-          let objectToRemove = anchoredObjects.shift();
-          scene.removeNode(objectToRemove.anchoredObject);
-          objectToRemove.anchor.delete();
-        }
-      }
-
-      let rayOrigin = vec3.create();
-      let rayDirection = vec3.create();
       function onSelect(event) {
-        if (reticle.visible) {
-          reticleHitTestResult.createAnchor().then((anchor) => {
-            addAnchoredObjectsToScene(anchor);
-          }, (error) => {
-            console.error("Could not create anchor: " + error);
-          });
-        }
+        if (flowerPlaced || !reticle.visible) return;
+
+        reticleHitTestResult.createAnchor().then((anchor) => {
+          arObject.visible = true;
+          flowerPlaced = true;
+          const anchorPose = anchor.anchorSpace;
+          arObject.matrix = reticle.matrix;
+        }, (error) => {
+          console.error("Could not create anchor: " + error);
+        });
       }
 
       function onXRFrame(t, frame) {
@@ -186,14 +169,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             reticle.matrix = pose.transform.matrix;
             reticleHitTestResult = hitTestResults[0];
           }
-        }
-
-        for (const {anchoredObject, anchor} of anchoredObjects) {
-          if (!frame.trackedAnchors.has(anchor)) {
-            continue;
-          }
-          const anchorPose = frame.getPose(anchor.anchorSpace, xrRefSpace);
-          anchoredObject.matrix = anchorPose.transform.matrix;
         }
 
         scene.startFrame();
