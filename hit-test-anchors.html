@@ -156,20 +156,20 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       }
 
       function onXRFrame(t, frame) {
-        let session = frame.session;
-        let pose = frame.getViewerPose(xrRefSpace);
+        const session = frame.session;
+        const pose = frame.getViewerPose(xrRefSpace);
 
         if (!flowerPlaced) {
           reticle.visible = false;
 
           if (xrHitTestSource && pose) {
-            let hitTestResults = frame.getHitTestResults(xrHitTestSource);
-            for (let result of hitTestResults) {
+            const hitTestResults = frame.getHitTestResults(xrHitTestSource);
+            for (const result of hitTestResults) {
               const hitPose = result.getPose(xrRefSpace);
               const yAxis = [0, 1, 0];
               const normal = [hitPose.transform.matrix[4], hitPose.transform.matrix[5], hitPose.transform.matrix[6]];
               const dot = vec3.dot(normal, yAxis);
-              if (Math.abs(dot) < 0.5) { // ignore floor/ceiling (dot close to 1 or -1)
+              if (Math.abs(dot) < 0.5) {
                 reticle.visible = true;
                 reticle.matrix = hitPose.transform.matrix;
                 reticleHitTestResult = result;
@@ -179,8 +179,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
           }
         }
 
-        scene.startFrame();
         session.requestAnimationFrame(onXRFrame);
+        scene.startFrame();
         scene.drawXRFrame(frame, pose);
         scene.endFrame();
       }
